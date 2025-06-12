@@ -1,6 +1,6 @@
 # var-sync Makefile for test automation and CI/CD
 
-.PHONY: all build test test-unit test-integration test-performance test-memory test-race-conditions test-coverage clean install deps lint fmt vet security help
+.PHONY: all build test test-unit test-integration test-performance test-memory test-race-conditions test-coverage clean install deps lint fmt vet security security-assessment help
 
 # Build variables
 BINARY_NAME=var-sync
@@ -59,6 +59,11 @@ test-race-conditions:
 	@echo "Running race condition tests..."
 	go test -v -timeout $(TEST_TIMEOUT) -run "TestRace|TestRealWorld|TestSafe" ./tests/
 
+# Run comprehensive security assessment
+security-assessment:
+	@echo "Running comprehensive security assessment..."
+	./security-report.sh
+
 # Run performance stress tests
 test-stress:
 	@echo "Running stress tests..."
@@ -109,12 +114,11 @@ vet:
 
 # Security audit
 security:
-	@echo "Running security audit..."
-	@which gosec > /dev/null || (echo "Installing gosec..." && go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest)
-	gosec ./...
+	@echo "Running basic security audit..."
 	@echo "Checking for known vulnerabilities..."
 	@which govulncheck > /dev/null || (echo "Installing govulncheck..." && go install golang.org/x/vuln/cmd/govulncheck@latest)
 	govulncheck ./...
+	@echo "For comprehensive security assessment, run: make security-assessment"
 
 # Profile CPU performance
 profile-cpu:
@@ -210,6 +214,7 @@ help:
 	@echo "  fmt             - Format code"
 	@echo "  vet             - Run go vet"
 	@echo "  security        - Run security audit"
+	@echo "  security-assessment - Run comprehensive security assessment"
 	@echo "  clean           - Clean build artifacts"
 	@echo "  install         - Install the application"
 	@echo "  deps            - Install dependencies"
