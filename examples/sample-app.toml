@@ -1,0 +1,16 @@
+[server]
+host = "orange"
+port = 8080
+
+[database]
+host = "db.example.com"
+port = 5432
+name = "pn"
+
+[auth]
+secret = "changeme"
+expiry = 3600
+
+[logging]
+level = "warn"
+output = "stdout"

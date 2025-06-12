@@ -1,0 +1,133 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+var-sync
+var-sync-*
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+coverage.out
+coverage.html
+coverage/
+
+# Dependency directories
+vendor/
+
+# Go workspace file
+go.work
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Log files
+*.log
+debug.log
+console.log
+output.log
+test.log
+var-sync.log
+
+# Configuration files (may contain sensitive data)
+var-sync.json
+config.json
+*.toml
+*.yaml
+*.yml
+!sample-*.toml
+!sample-*.yaml
+!sample-*.yml
+!sample-*.json
+
+# Profiling files
+*.prof
+cpu.prof
+mem.prof
+*.pprof
+
+# Test results and artifacts
+test-results/
+benchmarks/
+profiles/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Build artifacts
+dist/
+build/
+
+# Documentation build artifacts
+docs/_build/
+site/
+
+# Backup files
+*.bak
+*.backup
+*_backup.*
+*_old.*
+
+# Node.js (if using for documentation or tooling)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python (if using for scripts)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.env
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Local development files
+local/
+dev/
+scratch/
+
+# Generated files
+*.generated.go
+*_generated.go
+
+# Certificate files
+*.pem
+*.key
+*.crt
+*.cert
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Cache directories
+.cache/
+cache/

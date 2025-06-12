@@ -1,0 +1,16 @@
+{
+  "config": {
+    "api": {
+      "url": "http://localhost:3000"
+    },
+    "database": {
+      "host": "orange",
+      "port": "pn"
+    },
+    "environment": "development"
+  },
+  "settings": {
+    "cache": true,
+    "debug": false
+  }
+}

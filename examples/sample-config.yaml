@@ -1,0 +1,18 @@
+database:
+  host: localhost
+  port: 5432
+  name: myapp
+  user: admin
+  password: secret123
+
+api:
+  endpoint: https://api.example.com
+  timeout: 30
+  retries: 3
+
+features:
+  debug: true
+  cache: false
+  logging:
+    level: info
+    file: app.log
