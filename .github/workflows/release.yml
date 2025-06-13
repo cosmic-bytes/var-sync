@@ -29,7 +29,7 @@ jobs:
         id: current_version
         run: |
           CURRENT_VERSION=$(grep -o 'version.*=.*"[^"]*"' main.go | cut -d'"' -f2)
-          echo "current=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          echo "current=$CURRENT_VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Bump version
         id: version
@@ -40,9 +40,17 @@ jobs:
           MINOR=${PARTS[1]}
           PATCH=${PARTS[2]}
           NEW_PATCH=$((PATCH + 1))
+          
+          # Keep incrementing until we find an available tag
+          while git ls-remote --tags origin | grep -q "refs/tags/v$MAJOR.$MINOR.$NEW_PATCH"; do
+            echo "Tag v$MAJOR.$MINOR.$NEW_PATCH already exists, incrementing..."
+            NEW_PATCH=$((NEW_PATCH + 1))
+          done
+          
           NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH"
-          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
-          echo "tag=v$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "Using version: $NEW_VERSION"
+          echo "version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$NEW_VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Update version in code
         run: |

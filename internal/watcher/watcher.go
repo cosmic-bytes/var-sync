@@ -160,9 +160,9 @@ func (fw *FileWatcher) handleEvents() {
 			}
 
 			fw.logger.Debug("Received file event: %s %s", event.Op, event.Name)
-			if event.Op&fsnotify.Write == fsnotify.Write || 
-			   event.Op&fsnotify.Create == fsnotify.Create || 
-			   event.Op&fsnotify.Rename == fsnotify.Rename {
+			if event.Op&fsnotify.Write == fsnotify.Write ||
+				event.Op&fsnotify.Create == fsnotify.Create ||
+				event.Op&fsnotify.Rename == fsnotify.Rename {
 				fw.handleFileChange(event.Name)
 			}
 
@@ -236,12 +236,12 @@ func (fw *FileWatcher) batchRules(sourceFile string, rules []models.SyncRule) {
 	// Update rules in batch
 	batch.mutex.Lock()
 	batch.rules = rules
-	
+
 	// Reset or create timer
 	if batch.timer != nil {
-		batch.timer.Stop()
+		_ = batch.timer.Stop()
 	}
-	
+
 	batch.timer = time.AfterFunc(fw.batchProcessor.batchDelay, func() {
 		fw.batchProcessor.processChan <- sourceFile
 	})
@@ -399,7 +399,7 @@ func (fw *FileWatcher) processRuleInBatch(sourceData, targetData map[string]any,
 func (fw *FileWatcher) loadSourceFileWithRetry(sourceFile string) (map[string]any, error) {
 	var sourceData map[string]any
 	var err error
-	
+
 	for i := 0; i < 3; i++ {
 		sourceData, err = fw.parser.LoadFile(sourceFile)
 		if err == nil {
@@ -407,7 +407,7 @@ func (fw *FileWatcher) loadSourceFileWithRetry(sourceFile string) (map[string]an
 		}
 		time.Sleep(50 * time.Millisecond)
 	}
-	
+
 	return nil, err
 }
 
@@ -419,7 +419,7 @@ func (fw *FileWatcher) processEvents() {
 			if !ok {
 				return
 			}
-			
+
 			if event.Success {
 				fw.logger.Info("Safe sync successful for rule %s: %v -> %v", event.RuleID, event.OldValue, event.NewValue)
 			} else {

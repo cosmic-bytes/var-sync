@@ -18,7 +18,7 @@ import (
 // BenchmarkParserLoadFile benchmarks file loading performance
 func BenchmarkParserLoadFile(b *testing.B) {
 	tempDir := b.TempDir()
-	
+
 	testCases := []struct {
 		name    string
 		format  string
@@ -93,16 +93,16 @@ path = "/users/{id}"
 method = "DELETE"`,
 		},
 	}
-	
+
 	for _, tc := range testCases {
 		b.Run(tc.name, func(b *testing.B) {
 			filePath := filepath.Join(tempDir, fmt.Sprintf("test.%s", tc.format))
 			if err := os.WriteFile(filePath, []byte(tc.content), 0644); err != nil {
 				b.Fatalf("Failed to create test file: %v", err)
 			}
-			
+
 			parser := parser.New()
-			
+
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				_, err := parser.LoadFile(filePath)
@@ -118,7 +118,7 @@ method = "DELETE"`,
 func BenchmarkParserGetValue(b *testing.B) {
 	data := createLargeTestData()
 	parser := parser.New()
-	
+
 	testCases := []struct {
 		name    string
 		keyPath string
@@ -128,7 +128,7 @@ func BenchmarkParserGetValue(b *testing.B) {
 		{"ArrayKey", "api.base_url"},
 		{"MidLevelKey", "database.config.timeout"},
 	}
-	
+
 	for _, tc := range testCases {
 		b.Run(tc.name, func(b *testing.B) {
 			b.ResetTimer()
@@ -145,7 +145,7 @@ func BenchmarkParserGetValue(b *testing.B) {
 // BenchmarkParserSetValue benchmarks value setting performance
 func BenchmarkParserSetValue(b *testing.B) {
 	parser := parser.New()
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		data := createLargeTestData()
@@ -161,13 +161,13 @@ func BenchmarkParserSaveFile(b *testing.B) {
 	tempDir := b.TempDir()
 	data := createLargeTestData()
 	parser := parser.New()
-	
+
 	formats := []string{"json", "yaml", "toml"}
-	
+
 	for _, format := range formats {
 		b.Run(format, func(b *testing.B) {
 			filePath := filepath.Join(tempDir, fmt.Sprintf("bench.%s", format))
-			
+
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				err := parser.SaveFile(filePath, data)
@@ -183,7 +183,7 @@ func BenchmarkParserSaveFile(b *testing.B) {
 func BenchmarkConfigOperations(b *testing.B) {
 	tempDir := b.TempDir()
 	configFile := filepath.Join(tempDir, "bench-config.json")
-	
+
 	b.Run("CreateManager", func(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
@@ -194,13 +194,13 @@ func BenchmarkConfigOperations(b *testing.B) {
 			_ = manager
 		}
 	})
-	
+
 	b.Run("AddRule", func(b *testing.B) {
 		manager, err := config.NewManager(configFile)
 		if err != nil {
 			b.Fatalf("NewManager failed: %v", err)
 		}
-		
+
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			rule := models.SyncRule{
@@ -216,13 +216,13 @@ func BenchmarkConfigOperations(b *testing.B) {
 			manager.AddRule(rule)
 		}
 	})
-	
+
 	b.Run("GetRule", func(b *testing.B) {
 		manager, err := config.NewManager(configFile)
 		if err != nil {
 			b.Fatalf("NewManager failed: %v", err)
 		}
-		
+
 		// Add some rules first
 		for i := 0; i < 100; i++ {
 			rule := models.SyncRule{
@@ -237,7 +237,7 @@ func BenchmarkConfigOperations(b *testing.B) {
 			}
 			manager.AddRule(rule)
 		}
-		
+
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			ruleID := fmt.Sprintf("rule-%d", i%100)
@@ -252,7 +252,7 @@ func BenchmarkConfigOperations(b *testing.B) {
 // BenchmarkConcurrentOperations benchmarks concurrent access patterns
 func BenchmarkConcurrentOperations(b *testing.B) {
 	tempDir := b.TempDir()
-	
+
 	b.Run("ConcurrentFileReads", func(b *testing.B) {
 		// Create test files
 		files := make([]string, 10)
@@ -264,9 +264,9 @@ func BenchmarkConcurrentOperations(b *testing.B) {
 			}
 			files[i] = filePath
 		}
-		
+
 		parser := parser.New()
-		
+
 		b.ResetTimer()
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
@@ -279,10 +279,10 @@ func BenchmarkConcurrentOperations(b *testing.B) {
 			}
 		})
 	})
-	
+
 	b.Run("ConcurrentDataManipulation", func(b *testing.B) {
 		parser := parser.New()
-		
+
 		b.ResetTimer()
 		b.RunParallel(func(pb *testing.PB) {
 			// Each goroutine gets its own data to avoid concurrent map access
@@ -312,21 +312,21 @@ func TestPerformanceMemoryUsage(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping memory usage test in short mode")
 	}
-	
+
 	tempDir := t.TempDir()
-	
+
 	// Measure memory before test
 	var memBefore runtime.MemStats
 	runtime.GC()
 	runtime.ReadMemStats(&memBefore)
-	
+
 	// Create and process many files
 	parser := parser.New()
 	logger := logger.New()
-	
+
 	const numFiles = 1000
 	const numOperations = 10000
-	
+
 	// Create test files
 	files := make([]string, numFiles)
 	for i := 0; i < numFiles; i++ {
@@ -341,36 +341,36 @@ func TestPerformanceMemoryUsage(t *testing.T) {
 				}
 			}
 		}`, i, time.Now().Format(time.RFC3339), i, i*10)
-		
+
 		if err := os.WriteFile(filePath, []byte(content), 0644); err != nil {
 			t.Fatalf("Failed to create test file %d: %v", i, err)
 		}
 		files[i] = filePath
 	}
-	
+
 	// Perform operations
 	start := time.Now()
 	for i := 0; i < numOperations; i++ {
 		fileIndex := i % numFiles
-		
+
 		// Load file
 		data, err := parser.LoadFile(files[fileIndex])
 		if err != nil {
 			t.Fatalf("LoadFile failed on iteration %d: %v", i, err)
 		}
-		
+
 		// Get value
 		_, err = parser.GetValue(data, "data.nested.value")
 		if err != nil {
 			t.Fatalf("GetValue failed on iteration %d: %v", i, err)
 		}
-		
+
 		// Set value
 		err = parser.SetValue(data, "data.nested.modified", time.Now().Unix())
 		if err != nil {
 			t.Fatalf("SetValue failed on iteration %d: %v", i, err)
 		}
-		
+
 		// Save file (every 10th iteration to reduce I/O)
 		if i%10 == 0 {
 			err = parser.SaveFile(files[fileIndex], data)
@@ -378,35 +378,35 @@ func TestPerformanceMemoryUsage(t *testing.T) {
 				t.Fatalf("SaveFile failed on iteration %d: %v", i, err)
 			}
 		}
-		
+
 		// Log progress (every 1000 operations)
 		if i%1000 == 0 {
 			logger.Debug("Completed %d operations", i)
 		}
 	}
-	
+
 	duration := time.Since(start)
-	
+
 	// Measure memory after test
 	var memAfter runtime.MemStats
 	runtime.GC()
 	runtime.ReadMemStats(&memAfter)
-	
+
 	// Calculate metrics
 	opsPerSecond := float64(numOperations) / duration.Seconds()
 	memUsed := memAfter.Alloc - memBefore.Alloc
-	
+
 	logger.Info("Performance test completed:")
 	logger.Info("  Operations: %d", numOperations)
 	logger.Info("  Duration: %v", duration)
 	logger.Info("  Ops/sec: %.2f", opsPerSecond)
 	logger.Info("  Memory used: %d bytes (%.2f MB)", memUsed, float64(memUsed)/1024/1024)
-	
+
 	// Performance assertions (adjust thresholds as needed)
 	if opsPerSecond < 100 {
 		t.Errorf("Performance too slow: %.2f ops/sec (expected > 100)", opsPerSecond)
 	}
-	
+
 	maxMemoryMB := float64(100) // 100MB threshold
 	actualMemoryMB := float64(memUsed) / 1024 / 1024
 	if actualMemoryMB > maxMemoryMB {
@@ -419,9 +419,9 @@ func TestPerformanceConcurrency(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping concurrency test in short mode")
 	}
-	
+
 	tempDir := t.TempDir()
-	
+
 	// Create shared test files
 	numFiles := 50
 	files := make([]string, numFiles)
@@ -433,56 +433,56 @@ func TestPerformanceConcurrency(t *testing.T) {
 		}
 		files[i] = filePath
 	}
-	
+
 	// Test concurrent workers
 	numWorkers := 20
 	operationsPerWorker := 500
-	
+
 	var wg sync.WaitGroup
 	start := time.Now()
-	
+
 	for workerID := 0; workerID < numWorkers; workerID++ {
 		wg.Add(1)
 		go func(id int) {
 			defer wg.Done()
-			
+
 			parser := parser.New()
 			log := logger.New()
 			log.SetLevel(logger.ERROR) // Reduce log noise
-			
+
 			for i := 0; i < operationsPerWorker; i++ {
 				fileIndex := (id*operationsPerWorker + i) % numFiles
-				
+
 				// Load file
 				data, err := parser.LoadFile(files[fileIndex])
 				if err != nil {
 					t.Errorf("Worker %d: LoadFile failed: %v", id, err)
 					return
 				}
-				
+
 				// Update counter
 				counter, _ := parser.GetValue(data, "counter")
 				if counter == nil {
 					counter = 0
 				}
-				
+
 				newCounter := 1
 				if c, ok := counter.(float64); ok {
 					newCounter = int(c) + 1
 				}
-				
+
 				err = parser.SetValue(data, "counter", newCounter)
 				if err != nil {
 					t.Errorf("Worker %d: SetValue failed: %v", id, err)
 					return
 				}
-				
+
 				err = parser.SetValue(data, "last_worker", id)
 				if err != nil {
 					t.Errorf("Worker %d: SetValue failed: %v", id, err)
 					return
 				}
-				
+
 				// Save file (every 10th operation)
 				if i%10 == 0 {
 					err = parser.SaveFile(files[fileIndex], data)
@@ -494,20 +494,20 @@ func TestPerformanceConcurrency(t *testing.T) {
 			}
 		}(workerID)
 	}
-	
+
 	wg.Wait()
 	duration := time.Since(start)
-	
+
 	totalOperations := numWorkers * operationsPerWorker
 	opsPerSecond := float64(totalOperations) / duration.Seconds()
-	
+
 	t.Logf("Concurrency test completed:")
 	t.Logf("  Workers: %d", numWorkers)
 	t.Logf("  Operations per worker: %d", operationsPerWorker)
 	t.Logf("  Total operations: %d", totalOperations)
 	t.Logf("  Duration: %v", duration)
 	t.Logf("  Ops/sec: %.2f", opsPerSecond)
-	
+
 	// Verify no data corruption
 	parser := parser.New()
 	for i, file := range files {
@@ -516,12 +516,12 @@ func TestPerformanceConcurrency(t *testing.T) {
 			t.Errorf("Failed to verify file %d: %v", i, err)
 			continue
 		}
-		
+
 		counter, err := parser.GetValue(data, "counter")
 		if err != nil {
 			t.Errorf("Failed to get counter from file %d: %v", i, err)
 		}
-		
+
 		// Counter should be positive (multiple workers incremented it)
 		if c, ok := counter.(float64); ok && c <= 0 {
 			t.Errorf("File %d has invalid counter: %v", i, c)
@@ -567,7 +567,7 @@ func createLargeTestData() map[string]any {
 			},
 		},
 	}
-	
+
 	// Add more data to make it larger
 	for i := 0; i < 100; i++ {
 		key := fmt.Sprintf("dynamic_key_%d", i)
@@ -580,6 +580,6 @@ func createLargeTestData() map[string]any {
 			},
 		}
 	}
-	
+
 	return data
 }

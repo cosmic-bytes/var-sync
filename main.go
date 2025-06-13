@@ -15,9 +15,9 @@ const version = "1.0.0"
 
 func main() {
 	var (
-		configFile = flag.String("config", "var-sync.json", "Configuration file path")
+		configFile  = flag.String("config", "var-sync.json", "Configuration file path")
 		interactive = flag.Bool("tui", false, "Start interactive TUI mode")
-		watch = flag.Bool("watch", false, "Start file watching mode")
+		watch       = flag.Bool("watch", false, "Start file watching mode")
 		showVersion = flag.Bool("version", false, "Show version")
 	)
 	flag.Parse()

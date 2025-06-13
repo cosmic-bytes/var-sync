@@ -64,7 +64,7 @@ func (l *Logger) log(level LogLevel, format string, args ...any) {
 	timestamp := time.Now().Format("2006-01-02 15:04:05")
 	levelStr := []string{"DEBUG", "INFO", "WARN", "ERROR"}[level]
 	message := fmt.Sprintf(format, args...)
-	
+
 	logLine := fmt.Sprintf("[%s] %s: %s", timestamp, levelStr, message)
 
 	if l.logger != nil {

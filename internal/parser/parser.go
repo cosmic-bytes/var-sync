@@ -140,15 +140,15 @@ func (p *Parser) SetValue(data map[string]any, keyPath string, value any) error 
 
 func (p *Parser) GetAllKeys(data map[string]any, prefix string) []string {
 	var keys []string
-	
+
 	for key, value := range data {
 		fullKey := key
 		if prefix != "" {
 			fullKey = prefix + "." + key
 		}
-		
+
 		keys = append(keys, fullKey)
-		
+
 		switch v := value.(type) {
 		case map[string]any:
 			subKeys := p.GetAllKeys(v, fullKey)
@@ -159,7 +159,7 @@ func (p *Parser) GetAllKeys(data map[string]any, prefix string) []string {
 			keys = append(keys, subKeys...)
 		}
 	}
-	
+
 	return keys
 }
 

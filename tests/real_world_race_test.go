@@ -20,11 +20,11 @@ func TestRealWorldRaceConditionFixed(t *testing.T) {
 	}
 
 	tempDir := t.TempDir()
-	
+
 	// Create source and target files
 	sourceFile := filepath.Join(tempDir, "config.yaml")
 	targetFile := filepath.Join(tempDir, "app.json")
-	
+
 	// Initial source content
 	sourceContent := `database:
   host: localhost
@@ -39,11 +39,11 @@ cache:
   redis_host: localhost
   redis_port: 6379
   ttl: 3600`
-	
+
 	if err := os.WriteFile(sourceFile, []byte(sourceContent), 0644); err != nil {
 		t.Fatalf("Failed to create source file: %v", err)
 	}
-	
+
 	// Initial target content
 	targetContent := `{
   "config": {
@@ -58,11 +58,11 @@ cache:
     "cache_ttl": 1800
   }
 }`
-	
+
 	if err := os.WriteFile(targetFile, []byte(targetContent), 0644); err != nil {
 		t.Fatalf("Failed to create target file: %v", err)
 	}
-	
+
 	// Create multiple rules that all sync to the same target file
 	rules := []models.SyncRule{
 		{
@@ -156,29 +156,29 @@ cache:
 			Created:    time.Now(),
 		},
 	}
-	
+
 	// Set up file watcher (now using the safe implementation)
 	log := logger.New()
 	log.SetLevel(logger.INFO)
-	
+
 	fw, err := watcher.New(log)
 	if err != nil {
 		t.Fatalf("Failed to create file watcher: %v", err)
 	}
-	defer fw.Stop()
-	
+	defer func() { _ = fw.Stop() }()
+
 	if err := fw.SetRules(rules); err != nil {
 		t.Fatalf("Failed to set rules: %v", err)
 	}
-	
+
 	if err := fw.Start(); err != nil {
 		t.Fatalf("Failed to start file watcher: %v", err)
 	}
-	
+
 	// Monitor sync events
 	successfulSyncs := 0
 	failedSyncs := 0
-	
+
 	go func() {
 		for event := range fw.Events() {
 			if event.Success {
@@ -190,13 +190,13 @@ cache:
 			}
 		}
 	}()
-	
+
 	// Wait for initial setup
 	time.Sleep(300 * time.Millisecond)
-	
+
 	// Trigger file change that should activate all 9 rules simultaneously
 	t.Log("Triggering file change that should sync all 9 rules...")
-	
+
 	updatedContent := `database:
   host: production-db.example.com
   port: 5433
@@ -210,21 +210,21 @@ cache:
   redis_host: redis.production.com
   redis_port: 6379
   ttl: 7200`
-	
+
 	if err := os.WriteFile(sourceFile, []byte(updatedContent), 0644); err != nil {
 		t.Fatalf("Failed to update source file: %v", err)
 	}
-	
+
 	// Wait for all syncs to complete (including batch processing delay)
 	time.Sleep(1 * time.Second)
-	
+
 	// Verify final state
 	parser := parser.New()
 	finalData, err := parser.LoadFile(targetFile)
 	if err != nil {
 		t.Fatalf("Failed to load final target file: %v", err)
 	}
-	
+
 	// Expected values (after sync)
 	expectedValues := map[string]any{
 		"config.db_host":      "production-db.example.com",
@@ -237,11 +237,11 @@ cache:
 		"config.cache_port":   float64(6379),
 		"config.cache_ttl":    float64(7200),
 	}
-	
+
 	// Verify all values were synced correctly
 	correctSyncs := 0
 	incorrectSyncs := 0
-	
+
 	for keyPath, expectedValue := range expectedValues {
 		actualValue, err := parser.GetValue(finalData, keyPath)
 		if err != nil {
@@ -249,7 +249,7 @@ cache:
 			incorrectSyncs++
 			continue
 		}
-		
+
 		if actualValue != expectedValue {
 			t.Errorf("WRONG VALUE: %s expected %v, got %v", keyPath, expectedValue, actualValue)
 			incorrectSyncs++
@@ -258,14 +258,14 @@ cache:
 			correctSyncs++
 		}
 	}
-	
+
 	t.Logf("\n=== FINAL RESULTS ===")
 	t.Logf("Rules configured: %d", len(rules))
 	t.Logf("Successful sync events: %d", successfulSyncs)
 	t.Logf("Failed sync events: %d", failedSyncs)
 	t.Logf("Correct final values: %d", correctSyncs)
 	t.Logf("Incorrect final values: %d", incorrectSyncs)
-	
+
 	// Test assertions
 	if correctSyncs == len(expectedValues) && incorrectSyncs == 0 && failedSyncs == 0 {
 		t.Logf("🎉 SUCCESS: All %d rules synced correctly with NO race conditions!", len(rules))
@@ -274,11 +274,11 @@ cache:
 		t.Errorf("   Expected all %d values to sync correctly", len(expectedValues))
 		t.Errorf("   Got %d correct, %d incorrect, %d failed", correctSyncs, incorrectSyncs, failedSyncs)
 	}
-	
+
 	// Additional verification: Check that no data was lost
 	if configSection, ok := finalData["config"].(map[string]any); ok {
 		if len(configSection) < len(expectedValues) {
-			t.Errorf("Data loss detected: only %d values in target, expected %d", 
+			t.Errorf("Data loss detected: only %d values in target, expected %d",
 				len(configSection), len(expectedValues))
 		}
 	}

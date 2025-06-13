@@ -45,12 +45,9 @@ func (s *Syncer) Start() error {
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
 	s.logger.Info("Sync service started. Press Ctrl+C to stop.")
-	
+
 	// Keep the service running until signal received
-	select {
-	case <-sigChan:
-		// Received termination signal
-	}
+	<-sigChan
 
 	s.logger.Info("Shutting down sync service...")
 	return s.watcher.Stop()

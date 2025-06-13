@@ -34,18 +34,17 @@ type App struct {
 	config     *models.Config
 	logger     *logger.Logger
 	configPath string
-	
-	screen     screen
-	list       list.Model
-	inputs     []textinput.Model
-	parser     *parser.Parser
-	
+
+	screen screen
+	list   list.Model
+	inputs []textinput.Model
+	parser *parser.Parser
+
 	selectedRule *models.SyncRule
-	fileKeys     []string
 	keySelector  list.Model
 	fileBrowser  list.Model
 	currentPath  string
-	
+
 	width  int
 	height int
 }
@@ -65,9 +64,9 @@ func (k keyItem) Description() string { return "" }
 func (k keyItem) FilterValue() string { return string(k) }
 
 type fileItem struct {
-	name   string
-	path   string
-	isDir  bool
+	name  string
+	path  string
+	isDir bool
 }
 
 func (f fileItem) Title() string {
@@ -98,19 +97,13 @@ func (f fileItem) FilterValue() string { return f.name }
 
 var (
 	titleStyle = lipgloss.NewStyle().
-		Bold(true).
-		Foreground(lipgloss.Color("#FAFAFA")).
-		Background(lipgloss.Color("#7D56F4")).
-		Padding(0, 1)
+			Bold(true).
+			Foreground(lipgloss.Color("#FAFAFA")).
+			Background(lipgloss.Color("#7D56F4")).
+			Padding(0, 1)
 
 	helpStyle = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#626262"))
-
-	statusStyle = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#04B575"))
-
-	errorStyle = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#FF5F87"))
+			Foreground(lipgloss.Color("#626262"))
 )
 
 func New(cfg *models.Config, logger *logger.Logger) *App {
@@ -380,7 +373,7 @@ func (a *App) View() string {
 func (a *App) viewMain() string {
 	title := titleStyle.Render("var-sync Configuration")
 	help := helpStyle.Render("a: add rule • enter: edit • d: delete • q: quit")
-	
+
 	return fmt.Sprintf("%s\n\n%s\n\n%s",
 		title,
 		a.list.View(),
@@ -390,7 +383,7 @@ func (a *App) viewMain() string {
 
 func (a *App) viewForm(title string) string {
 	var b strings.Builder
-	
+
 	b.WriteString(titleStyle.Render(title))
 	b.WriteString("\n\n")
 
@@ -416,7 +409,7 @@ func (a *App) viewForm(title string) string {
 func (a *App) viewKeySelector() string {
 	title := titleStyle.Render("Select Key Path")
 	help := helpStyle.Render("enter: select • esc: cancel")
-	
+
 	return fmt.Sprintf("%s\n\n%s\n\n%s",
 		title,
 		a.keySelector.View(),
@@ -427,7 +420,7 @@ func (a *App) viewKeySelector() string {
 func (a *App) viewFileBrowser() string {
 	title := titleStyle.Render(fmt.Sprintf("Browse Files - %s", a.currentPath))
 	help := helpStyle.Render("enter: select/navigate • esc: cancel")
-	
+
 	return fmt.Sprintf("%s\n\n%s\n\n%s",
 		title,
 		a.fileBrowser.View(),
@@ -570,7 +563,7 @@ func (a *App) loadFileBrowser() {
 	}
 
 	var items []list.Item
-	
+
 	// Add parent directory option if not at root
 	if a.currentPath != "/" && a.currentPath != "" {
 		parent := filepath.Dir(a.currentPath)
