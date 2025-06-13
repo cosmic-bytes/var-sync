@@ -5,7 +5,7 @@
     },
     "database": {
       "host": "orange",
-      "port": "pn"
+      "port": 1234
     },
     "environment": "development"
   },

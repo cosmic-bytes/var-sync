@@ -1,9 +1,10 @@
+# Test
 [server]
 host = "orange"
 port = 8080
 
 [database]
-host = "db.example.com"
+host = "red"
 port = 5432
 name = "pn"
 

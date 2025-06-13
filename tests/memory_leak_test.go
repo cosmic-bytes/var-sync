@@ -1,3 +1,5 @@
+// +build memory
+
 package main
 
 import (

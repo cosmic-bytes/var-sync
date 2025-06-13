@@ -321,36 +321,30 @@ func (fw *FileWatcher) processTargetGroup(sourceData map[string]any, targetFile 
 
 	fw.logger.Debug("Processing %d rules for target file %s (synchronized)", len(rules), targetFile)
 
-	// Load target file once
-	targetData, err := fw.parser.LoadFile(targetFile)
-	if err != nil {
-		fw.logger.Warn("Target file doesn't exist, creating new: %s", targetFile)
-		targetData = make(map[string]any)
-	}
-
-	// Apply all rule changes to the same target data
+	// Collect all updates for batch surgical processing
+	updates := make(map[string]any)
 	allSuccessful := true
 	events := make([]models.SyncEvent, 0, len(rules))
 
 	for _, rule := range rules {
-		event := fw.processRuleInBatch(sourceData, targetData, rule)
+		event := fw.processRuleForBatch(sourceData, rule, updates)
 		events = append(events, event)
 		if !event.Success {
 			allSuccessful = false
 		}
 	}
 
-	// Save target file once with all changes
-	if allSuccessful {
-		if err := fw.parser.SaveFile(targetFile, targetData); err != nil {
-			fw.logger.Error("Failed to save target file %s: %v", targetFile, err)
+	// Apply all changes surgically to preserve formatting
+	if allSuccessful && len(updates) > 0 {
+		if err := fw.parser.UpdateFileValues(targetFile, updates); err != nil {
+			fw.logger.Error("Failed to update target file %s: %v", targetFile, err)
 			// Mark all events as failed
 			for i := range events {
 				events[i].Success = false
-				events[i].Error = fmt.Sprintf("Failed to save target file: %v", err)
+				events[i].Error = fmt.Sprintf("Failed to update target file: %v", err)
 			}
 		} else {
-			fw.logger.Info("Successfully saved %d changes to target file %s", len(rules), targetFile)
+			fw.logger.Info("Successfully applied %d surgical updates to target file %s", len(updates), targetFile)
 		}
 	}
 
@@ -385,6 +379,37 @@ func (fw *FileWatcher) processRuleInBatch(sourceData, targetData map[string]any,
 			Error:     fmt.Sprintf("Failed to set target value: %v", err),
 		}
 	}
+
+	return models.SyncEvent{
+		RuleID:    rule.ID,
+		Timestamp: time.Now(),
+		OldValue:  oldValue,
+		NewValue:  newValue,
+		Success:   true,
+	}
+}
+
+// processRuleForBatch processes a single rule and collects updates for surgical batch processing
+func (fw *FileWatcher) processRuleForBatch(sourceData map[string]any, rule models.SyncRule, updates map[string]any) models.SyncEvent {
+	// Get source value
+	newValue, err := fw.parser.GetValue(sourceData, rule.SourceKey)
+	if err != nil {
+		return models.SyncEvent{
+			RuleID:    rule.ID,
+			Timestamp: time.Now(),
+			Success:   false,
+			Error:     fmt.Sprintf("Failed to get source value: %v", err),
+		}
+	}
+
+	// Get old value from the target file for the event
+	var oldValue any
+	if targetData, err := fw.parser.LoadFile(rule.TargetFile); err == nil {
+		oldValue, _ = fw.parser.GetValue(targetData, rule.TargetKey)
+	}
+
+	// Add to updates map for surgical processing
+	updates[rule.TargetKey] = newValue
 
 	return models.SyncEvent{
 		RuleID:    rule.ID,
