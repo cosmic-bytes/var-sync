@@ -8,6 +8,7 @@ const (
 	FormatJSON FileFormat = "json"
 	FormatYAML FileFormat = "yaml"
 	FormatTOML FileFormat = "toml"
+	FormatENV  FileFormat = "env"
 )
 
 type SyncRule struct {
@@ -52,6 +53,8 @@ func DetectFormat(filepath string) FileFormat {
 		return FormatTOML
 	case len(filepath) >= 5 && filepath[len(filepath)-5:] == ".json":
 		return FormatJSON
+	case len(filepath) >= 4 && filepath[len(filepath)-4:] == ".env":
+		return FormatENV
 	default:
 		return FormatJSON
 	}

@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -36,6 +37,8 @@ func (p *Parser) LoadFile(filepath string) (map[string]any, error) {
 		err = yaml.Unmarshal(data, &result)
 	case models.FormatTOML:
 		err = toml.Unmarshal(data, &result)
+	case models.FormatENV:
+		result, err = p.parseEnvFile(string(data))
 	default:
 		return nil, fmt.Errorf("unsupported file format: %s", format)
 	}
@@ -67,6 +70,8 @@ func (p *Parser) SaveFile(filepath string, data map[string]any) error {
 		if err == nil {
 			output = []byte(buf.String())
 		}
+	case models.FormatENV:
+		output = []byte(p.formatEnvFile(data))
 	default:
 		return fmt.Errorf("unsupported file format: %s", format)
 	}
@@ -100,6 +105,8 @@ func (p *Parser) UpdateFileValues(filepath string, updates map[string]any) error
 		return p.updateTOMLValues(filepath, updates)
 	case models.FormatJSON:
 		return p.updateJSONValues(filepath, updates)
+	case models.FormatENV:
+		return p.updateEnvValues(filepath, updates)
 	default:
 		return fmt.Errorf("unsupported file format for targeted updates: %s", format)
 	}
@@ -926,4 +933,153 @@ func parseKeySegment(segment string) (string, int, error) {
 func (p *Parser) ValidateKeyPath(data map[string]any, keyPath string) error {
 	_, err := p.GetValue(data, keyPath)
 	return err
+}
+
+// parseEnvFile parses .env file content into a map[string]any
+func (p *Parser) parseEnvFile(content string) (map[string]any, error) {
+	result := make(map[string]any)
+	scanner := bufio.NewScanner(strings.NewReader(content))
+	
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		
+		// Skip empty lines and comments
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		
+		// Find the first = sign
+		eqIndex := strings.Index(line, "=")
+		if eqIndex == -1 {
+			continue // Skip lines without =
+		}
+		
+		key := strings.TrimSpace(line[:eqIndex])
+		value := strings.TrimSpace(line[eqIndex+1:])
+		
+		// Remove quotes if present
+		if len(value) >= 2 {
+			if (strings.HasPrefix(value, "\"") && strings.HasSuffix(value, "\"")) ||
+				(strings.HasPrefix(value, "'") && strings.HasSuffix(value, "'")) {
+				value = value[1 : len(value)-1]
+			}
+		}
+		
+		// Try to parse as different types
+		if value == "true" || value == "false" {
+			result[key] = value == "true"
+		} else if intVal, err := strconv.ParseInt(value, 10, 64); err == nil {
+			result[key] = intVal
+		} else if floatVal, err := strconv.ParseFloat(value, 64); err == nil {
+			result[key] = floatVal
+		} else {
+			result[key] = value
+		}
+	}
+	
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("error reading env file: %w", err)
+	}
+	
+	return result, nil
+}
+
+// formatEnvFile formats a map[string]any as .env file content
+func (p *Parser) formatEnvFile(data map[string]any) string {
+	var lines []string
+	
+	for key, value := range data {
+		var valueStr string
+		switch v := value.(type) {
+		case string:
+			// Quote strings if they contain spaces or special characters
+			if strings.ContainsAny(v, " \t#\"'\\") || v == "" {
+				valueStr = fmt.Sprintf("\"%s\"", strings.ReplaceAll(v, "\"", "\\\""))
+			} else {
+				valueStr = v
+			}
+		default:
+			valueStr = fmt.Sprintf("%v", v)
+		}
+		
+		lines = append(lines, fmt.Sprintf("%s=%s", key, valueStr))
+	}
+	
+	return strings.Join(lines, "\n") + "\n"
+}
+
+// updateEnvValues updates multiple values in a .env file while preserving formatting and comments
+func (p *Parser) updateEnvValues(filepath string, updates map[string]any) error {
+	content, err := os.ReadFile(filepath)
+	if err != nil {
+		return fmt.Errorf("failed to read file: %w", err)
+	}
+	
+	lines := strings.Split(string(content), "\n")
+	updatedLines := make(map[int]bool)
+	updatedCount := 0
+	
+	// Process each update by finding the matching key
+	for keyPath, newValue := range updates {
+		for i, line := range lines {
+			if updatedLines[i] {
+				continue // Skip already updated lines
+			}
+			
+			trimmed := strings.TrimSpace(line)
+			if trimmed == "" || strings.HasPrefix(trimmed, "#") {
+				continue // Skip empty lines and comments
+			}
+			
+			eqIndex := strings.Index(trimmed, "=")
+			if eqIndex == -1 {
+				continue // Skip lines without =
+			}
+			
+			key := strings.TrimSpace(trimmed[:eqIndex])
+			if key == keyPath {
+				// Found the line to update
+				valueStr := formatEnvValue(newValue)
+				
+				// Find the = in the original line to preserve formatting
+				originalEqIndex := strings.Index(line, "=")
+				if originalEqIndex >= 0 {
+					before := line[:originalEqIndex+1]
+					// Check if there was a space after =
+					if originalEqIndex+1 < len(line) && line[originalEqIndex+1] == ' ' {
+						before += " "
+					}
+					lines[i] = before + valueStr
+				} else {
+					lines[i] = fmt.Sprintf("%s=%s", key, valueStr)
+				}
+				
+				updatedLines[i] = true
+				updatedCount++
+				break
+			}
+		}
+	}
+	
+	if updatedCount == 0 {
+		return fmt.Errorf("no key paths found in file")
+	}
+	
+	// Write back the modified content
+	newContent := strings.Join(lines, "\n")
+	return os.WriteFile(filepath, []byte(newContent), 0644)
+}
+
+// formatEnvValue formats a value for use in .env files
+func formatEnvValue(value any) string {
+	switch v := value.(type) {
+	case string:
+		// Quote strings if they contain spaces or special characters
+		if strings.ContainsAny(v, " \t#\"'\\") || v == "" {
+			return fmt.Sprintf("\"%s\"", strings.ReplaceAll(v, "\"", "\\\""))
+		}
+		return v
+	default:
+		return fmt.Sprintf("%v", v)
+	}
 }
